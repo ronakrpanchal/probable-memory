@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Little Something For You 💌</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Lora:ital,wght@0,400;1,400;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="bg"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div class="hearts" id="hearts"></div>
+
+  <!-- MAIN STAGE -->
+  <div class="stage">
+    <p class="hint">✉️ tap the envelope...</p>
+
+    <div class="envelope-wrap" id="envelope" onclick="openEnvelope()">
+      <div class="env-body"></div>
+      <div class="env-left"></div>
+      <div class="env-right"></div>
+      <div class="env-bottom"></div>
+
+      <div class="letter-wrap" id="letterWrap">
+        <div class="letter">
+          <div class="letter-question">
+            Will you go<br>bowling with me?
+          </div>
+          <div class="btns">
+            <button class="btn btn-yes" onclick="sayYes(event)">Yes! 💕</button>
+            <button class="btn btn-no" id="noBtn" onmouseover="runAway(this)" ontouchstart="runAway(this)">Maybe not</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="env-flap" id="flap"></div>
+      <div class="seal" id="seal">💌</div>
+    </div>
+  </div>
+
+  <!-- RESPONSE -->
+  <div class="response" id="response">
+    <div class="confetti-wrap" id="confettiWrap"></div>
+    <div class="response-emoji">🎳💕🎉</div>
+    <div class="response-text">Yay! It's a date! 🥂</div>
+    <div class="response-sub">
+      Get ready for the best bowling date ever —<br>
+      I promise to let you win… maybe. 😏<br><br>
+      See you on the lanes! 🎳✨
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,468 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --rose: #e8396a;
+  --blush: #f7c5d0;
+  --wine: #8b1a3a;
+  --cream: #fdf6ec;
+  --gold: #d4a853;
+  --soft: #f9e8ef;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a0a12;
+  overflow: hidden;
+  font-family: 'Lora', serif;
+  position: relative;
+}
+
+/* ── Romantic background ── */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, #3d0c22 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, #2a0d1a 0%, transparent 55%),
+    radial-gradient(ellipse at 60% 80%, #1f0613 0%, transparent 50%),
+    linear-gradient(135deg, #1a0a12 0%, #2d0f1e 50%, #1a0a12 100%);
+}
+
+/* bokeh / light orbs */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.18;
+  z-index: 0;
+  pointer-events: none;
+  animation: drift 8s ease-in-out infinite alternate;
+}
+.orb:nth-child(1) { width: 320px; height: 320px; background: #e8396a; top: -80px; left: -60px; animation-delay: 0s; }
+.orb:nth-child(2) { width: 200px; height: 200px; background: #d4a853; bottom: -60px; right: -40px; animation-delay: 2s; }
+.orb:nth-child(3) { width: 160px; height: 160px; background: #8b1a3a; top: 40%; left: 60%; animation-delay: 4s; }
+
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(20px, 30px) scale(1.1); }
+}
+
+/* floating hearts */
+.hearts {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.heart {
+  position: absolute;
+  font-size: 14px;
+  opacity: 0;
+  animation: floatUp 6s ease-in infinite;
+}
+@keyframes floatUp {
+  0%   { opacity: 0; transform: translateY(0) rotate(-10deg) scale(0.8); }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.3; }
+  100% { opacity: 0; transform: translateY(-100vh) rotate(15deg) scale(1.2); }
+}
+
+/* star twinkle */
+.star {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: #fff;
+  border-radius: 50%;
+  z-index: 0;
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: 0.1; }
+  to   { opacity: 0.7; }
+}
+
+/* ── Stage ── */
+.stage {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 20px 40px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.hint {
+  color: var(--blush);
+  font-family: 'Dancing Script', cursive;
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+  opacity: 0.8;
+  letter-spacing: 0.05em;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+/* ── Envelope ── */
+.envelope-wrap {
+  position: relative;
+  width: 300px;
+  height: 210px;
+  overflow: hidden;
+  cursor: pointer;
+  filter: drop-shadow(0 20px 50px rgba(232, 57, 106, 0.35));
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+.envelope-wrap:hover {
+  transform: scale(1.04);
+  filter: drop-shadow(0 28px 60px rgba(232, 57, 106, 0.5));
+}
+.envelope-wrap.opened {
+  cursor: default;
+  overflow: visible;
+}
+
+.env-body,
+.env-left,
+.env-right,
+.env-bottom,
+.env-flap,
+.seal {
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease;
+}
+
+.envelope-wrap.drop-away .env-body,
+.envelope-wrap.drop-away .env-left,
+.envelope-wrap.drop-away .env-right,
+.envelope-wrap.drop-away .env-bottom,
+.envelope-wrap.drop-away .seal {
+  transform: translateY(170px) scale(0.92);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.envelope-wrap.drop-away .env-flap {
+  transform: rotateX(180deg) translateY(170px) scale(0.92);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* envelope body */
+.env-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(160deg, #f9e8ef 0%, #f2d0de 100%);
+  border: 1.5px solid rgba(232, 57, 106, 0.3);
+  overflow: hidden;
+}
+.env-body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 18px,
+    rgba(212, 168, 83, 0.04) 18px,
+    rgba(212, 168, 83, 0.04) 19px
+  );
+}
+
+/* bottom triangle */
+.env-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 100%;
+  clip-path: polygon(0 100%, 50% 45%, 100% 100%);
+  background: linear-gradient(180deg, #f0c0d0 0%, #e8a0bc 100%);
+  border-radius: 6px;
+}
+
+/* side triangles */
+.env-left {
+  position: absolute;
+  top: 0; left: 0; bottom: 0; width: 100%;
+  clip-path: polygon(0 0, 50% 45%, 0 100%);
+  background: linear-gradient(90deg, #eab0c8 0%, #f4c8d8 100%);
+}
+.env-right {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; width: 100%;
+  clip-path: polygon(100% 0, 50% 45%, 100% 100%);
+  background: linear-gradient(270deg, #eab0c8 0%, #f4c8d8 100%);
+}
+
+/* flap */
+.env-flap {
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 100%;
+  clip-path: polygon(0 0, 50% 48%, 100% 0);
+  background: linear-gradient(180deg, #e8396a 0%, #c0305a 100%);
+  transform-origin: top center;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+}
+.env-flap.open {
+  transform: rotateX(180deg);
+  pointer-events: none;
+}
+
+/* seal */
+.seal {
+  position: absolute;
+  top: 42%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px; height: 44px;
+  background: var(--rose);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  z-index: 6;
+  box-shadow: 0 4px 14px rgba(232, 57, 106, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.seal.hide {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.5);
+}
+
+/* ── Letter ── */
+.letter-wrap {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 4;
+  transform: translateY(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.letter-wrap.slide-up {
+  opacity: 1;
+  z-index: 8;
+  pointer-events: auto;
+}
+
+.letter {
+  background: var(--cream);
+  border-radius: 4px;
+  padding: 28px 22px 26px;
+  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(212, 168, 83, 0.2);
+  background: var(--cream);
+  position: relative;
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.letter::before {
+  content: '';
+  position: absolute;
+  top: 10px; bottom: 10px; left: 10px; right: 10px;
+  border: 1px solid rgba(212, 168, 83, 0.15);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.letter-top-decor {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+.letter-title {
+  font-family: 'Dancing Script', cursive;
+  font-size: 2rem;
+  color: var(--rose);
+  text-align: center;
+  margin-bottom: 14px;
+  line-height: 1.2;
+}
+
+.letter-body {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 0.92rem;
+  color: #5a2a3a;
+  line-height: 1.8;
+  text-align: center;
+}
+
+.divider {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 16px auto;
+}
+
+.bowling-icon {
+  font-size: 2.6rem;
+  margin: 10px 0;
+}
+
+.letter-question {
+  font-family: 'Dancing Script', cursive;
+  font-size: 1.6rem;
+  color: var(--wine);
+  text-align: center;
+  margin: 10px 0 20px;
+  line-height: 1.3;
+}
+
+/* buttons */
+.btns {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+}
+.btn {
+  padding: 12px 28px;
+  border-radius: 50px;
+  border: none;
+  font-family: 'Dancing Script', cursive;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-weight: 700;
+}
+.btn:hover { transform: scale(1.07); }
+
+.btn-yes {
+  background: linear-gradient(135deg, var(--rose) 0%, var(--wine) 100%);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(232, 57, 106, 0.45);
+}
+
+.btn-no {
+  background: transparent;
+  color: var(--rose);
+  border: 1.5px solid var(--blush);
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.letter-sign {
+  font-family: 'Dancing Script', cursive;
+  font-size: 1.1rem;
+  color: #a06080;
+  margin-top: 14px;
+}
+
+/* ── Response panel ── */
+.response {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a0a12 0%, #3d0c22 100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  padding: 30px;
+}
+.response.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.response-emoji {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  animation: bounce 1s ease infinite alternate;
+}
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-12px); }
+}
+
+.response-text {
+  font-family: 'Dancing Script', cursive;
+  font-size: 2.2rem;
+  color: var(--blush);
+  text-align: center;
+  line-height: 1.4;
+  text-shadow: 0 0 30px rgba(232, 57, 106, 0.5);
+}
+
+.response-sub {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  color: #c098a8;
+  font-size: 0.95rem;
+  text-align: center;
+  margin-top: 16px;
+  line-height: 1.7;
+}
+
+.confetti-wrap {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+}
+
+/* gif suggestions banner */
+.gif-box {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 8, 18, 0.92);
+  border: 1px solid rgba(212, 168, 83, 0.25);
+  border-radius: 12px;
+  padding: 14px 20px;
+  z-index: 20;
+  width: 90%;
+  max-width: 380px;
+  backdrop-filter: blur(10px);
+}
+.gif-title {
+  font-family: 'Dancing Script', cursive;
+  color: var(--gold);
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+.gif-list { list-style: none; }
+.gif-list li {
+  color: var(--blush);
+  font-size: 0.8rem;
+  font-family: 'Lora', serif;
+  font-style: italic;
+  padding: 3px 0;
+}
+.gif-list li span {
+  color: var(--gold);
+  font-style: normal;
+  margin-right: 4px;
+}
+.gif-close {
+  position: absolute;
+  top: 10px; right: 12px;
+  background: none;
+  border: none;
+  color: #a06080;
+  font-size: 1rem;
+  cursor: pointer;
+}
