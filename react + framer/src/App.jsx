@@ -9,6 +9,7 @@ export default function App() {
   const [showResponse, setShowResponse] = useState(false);
   const [noBtnPos, setNoBtnPos] = useState({});
   const canvasRef = useRef(null);
+  const noBtnRef = useRef(null);
 
   const handleOpen = () => {
     if (opened) return;
@@ -16,13 +17,13 @@ export default function App() {
 
     setTimeout(() => {
       setShowLetter(true);
-    }, 400);
+    }, 600);
   };
 
   const fireConfetti = () => {
     confetti({
-      particleCount: 120,
-      spread: 90,
+      particleCount: 200,
+      spread: 200,
       origin: { y: 0.6 },
     });
 
@@ -37,10 +38,35 @@ export default function App() {
   const handleYes = (e) => {
     e.stopPropagation();
     fireConfetti();
-    setShowResponse(true);
+    setTimeout(() => {
+      setShowResponse(true);
+    }, 650);
   };
 
   const runAway = () => {
+    const isPhone = window.matchMedia("(max-width: 430px)").matches;
+
+    if (isPhone) {
+      const btnWidth = noBtnRef.current?.offsetWidth ?? 120;
+      const btnHeight = noBtnRef.current?.offsetHeight ?? 44;
+      const safe = 12;
+
+      const maxX = Math.max(safe, window.innerWidth - btnWidth - safe);
+      const maxY = Math.max(safe, window.innerHeight - btnHeight - safe);
+
+      const newX = safe + Math.random() * (maxX - safe);
+      const newY = safe + Math.random() * (maxY - safe);
+
+      setNoBtnPos({
+        position: "fixed",
+        left: newX,
+        top: newY,
+        zIndex: 30,
+      });
+
+      return;
+    }
+
     const range = 400;
 
     setNoBtnPos((prev) => {
@@ -207,20 +233,25 @@ export default function App() {
         if (waves.length > maxWaves) waves.shift();
       };
 
-      const onMouseMove = (e) => {
+      const pushWaveFromClientPoint = (clientX, clientY, strength = 1) => {
         const rect = canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-        pushWave(x, y, 1);
+        const x = (clientX - rect.left) / rect.width;
+        const y = (clientY - rect.top) / rect.height;
+        pushWave(x, y, strength);
+      };
+
+      const onMouseMove = (e) => {
+        pushWaveFromClientPoint(e.clientX, e.clientY, 4);
       };
 
       const onTouchMove = (e) => {
         if (!e.touches[0]) return;
         const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        const x = (touch.clientX - rect.left) / rect.width;
-        const y = (touch.clientY - rect.top) / rect.height;
-        pushWave(x, y, 1.1);
+        pushWaveFromClientPoint(touch.clientX, touch.clientY, 4.4);
+      };
+
+      const onPointerDown = (e) => {
+        pushWaveFromClientPoint(e.clientX, e.clientY, 7);
       };
 
       const onResize = () => {
@@ -229,6 +260,7 @@ export default function App() {
 
       window.addEventListener("mousemove", onMouseMove);
       window.addEventListener("touchmove", onTouchMove, { passive: true });
+      window.addEventListener("pointerdown", onPointerDown, { passive: true });
       window.addEventListener("resize", onResize);
 
       const uniformBuffer = device.createBuffer({
@@ -311,6 +343,7 @@ export default function App() {
         cancelAnimationFrame(rafId);
         window.removeEventListener("mousemove", onMouseMove);
         window.removeEventListener("touchmove", onTouchMove);
+        window.removeEventListener("pointerdown", onPointerDown);
         window.removeEventListener("resize", onResize);
       };
     };
@@ -384,6 +417,7 @@ export default function App() {
                     </Motion.button>
 
                     <button
+                      ref={noBtnRef}
                       className="btn btn-no"
                       style={noBtnPos}
                       onMouseEnter={runAway}
