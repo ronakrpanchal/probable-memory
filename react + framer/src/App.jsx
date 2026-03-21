@@ -9,6 +9,7 @@ export default function App() {
   const [showResponse, setShowResponse] = useState(false);
   const [noBtnPos, setNoBtnPos] = useState({});
   const canvasRef = useRef(null);
+  const noBtnRef = useRef(null);
 
   const handleOpen = () => {
     if (opened) return;
@@ -41,6 +42,29 @@ export default function App() {
   };
 
   const runAway = () => {
+    const isPhone = window.matchMedia("(max-width: 430px)").matches;
+
+    if (isPhone) {
+      const btnWidth = noBtnRef.current?.offsetWidth ?? 120;
+      const btnHeight = noBtnRef.current?.offsetHeight ?? 44;
+      const safe = 12;
+
+      const maxX = Math.max(safe, window.innerWidth - btnWidth - safe);
+      const maxY = Math.max(safe, window.innerHeight - btnHeight - safe);
+
+      const newX = safe + Math.random() * (maxX - safe);
+      const newY = safe + Math.random() * (maxY - safe);
+
+      setNoBtnPos({
+        position: "fixed",
+        left: newX,
+        top: newY,
+        zIndex: 30,
+      });
+
+      return;
+    }
+
     const range = 400;
 
     setNoBtnPos((prev) => {
@@ -384,6 +408,7 @@ export default function App() {
                     </Motion.button>
 
                     <button
+                      ref={noBtnRef}
                       className="btn btn-no"
                       style={noBtnPos}
                       onMouseEnter={runAway}
