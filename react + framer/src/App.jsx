@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion as Motion} from "framer-motion";
 import confetti from "canvas-confetti";
 import "./App.css";
+import { initEnvelope } from "./threeEnvelope";
 
 export default function App() {
   const [opened, setOpened] = useState(false);
@@ -10,15 +11,10 @@ export default function App() {
   const [noBtnPos, setNoBtnPos] = useState({});
   const canvasRef = useRef(null);
   const noBtnRef = useRef(null);
-
-  const handleOpen = () => {
-    if (opened) return;
-    setOpened(true);
-
-    setTimeout(() => {
-      setShowLetter(true);
-    }, 600);
-  };
+  const threeRef = useRef(null);
+  const responseRef = useRef(null);
+  const triggerResponseRippleRef = useRef(() => {});
+  const pendingResponseRippleRef = useRef(false);
 
   const fireConfetti = () => {
     confetti({
@@ -40,6 +36,8 @@ export default function App() {
     fireConfetti();
     setTimeout(() => {
       setShowResponse(true);
+      pendingResponseRippleRef.current = true;
+      triggerResponseRippleRef.current();
     }, 650);
   };
 
@@ -89,35 +87,39 @@ export default function App() {
   };
 
   useEffect(() => {
+    let unmounted = false;
+    let cleanup = () => {};
+
     const init = async () => {
-      if (!navigator.gpu) {
-        console.error("WebGPU not supported");
-        return;
-      }
+      try {
+        if (!navigator.gpu || typeof GPUBufferUsage === "undefined") {
+          console.error("WebGPU not supported");
+          return () => {};
+        }
 
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return () => {};
 
-      const context = canvas.getContext("webgpu");
-      if (!context) {
-        console.error("Failed to get WebGPU context");
-        return;
-      }
+        const context = canvas.getContext("webgpu");
+        if (!context) {
+          console.error("Failed to get WebGPU context");
+          return () => {};
+        }
 
-      const adapter = await navigator.gpu.requestAdapter();
-      if (!adapter) {
-        console.error("No GPU adapter available");
-        return;
-      }
+        const adapter = await navigator.gpu.requestAdapter();
+        if (!adapter) {
+          console.error("No GPU adapter available");
+          return () => {};
+        }
 
-      const device = await adapter.requestDevice();
-      const format = navigator.gpu.getPreferredCanvasFormat();
+        const device = await adapter.requestDevice();
+        const format = navigator.gpu.getPreferredCanvasFormat();
 
-      context.configure({
-        device,
-        format,
-        alphaMode: "premultiplied",
-      });
+        context.configure({
+          device,
+          format,
+          alphaMode: "premultiplied",
+        });
 
       const setCanvasSize = () => {
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -254,6 +256,43 @@ export default function App() {
         pushWaveFromClientPoint(e.clientX, e.clientY, 7);
       };
 
+      const triggerResponseRipple = () => {
+        const rect = responseRef.current?.getBoundingClientRect();
+
+        if (rect) {
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+
+          const burst = [
+            [0, 0, 14],
+            [-70, -24, 10],
+            [70, -24, 10],
+            [-110, 22, 8],
+            [110, 22, 8],
+            [0, 0, 10],
+          ];
+
+          for (let i = 0; i < burst.length; i += 1) {
+            const [dx, dy, strength] = burst[i];
+            setTimeout(() => {
+              pushWaveFromClientPoint(cx + dx, cy + dy, strength);
+            }, i * 85);
+          }
+          return;
+        }
+
+        pushWave(0.5, 0.6, 12);
+        setTimeout(() => pushWave(0.5, 0.6, 9), 100);
+        setTimeout(() => pushWave(0.5, 0.6, 7), 200);
+      };
+
+      triggerResponseRippleRef.current = triggerResponseRipple;
+
+      if (pendingResponseRippleRef.current) {
+        triggerResponseRipple();
+        pendingResponseRippleRef.current = false;
+      }
+
       const onResize = () => {
         setCanvasSize();
       };
@@ -337,27 +376,107 @@ export default function App() {
         rafId = requestAnimationFrame(render);
       };
 
-      render();
+        render();
 
-      return () => {
-        cancelAnimationFrame(rafId);
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("touchmove", onTouchMove);
-        window.removeEventListener("pointerdown", onPointerDown);
-        window.removeEventListener("resize", onResize);
-      };
+        return () => {
+          cancelAnimationFrame(rafId);
+          window.removeEventListener("mousemove", onMouseMove);
+          window.removeEventListener("touchmove", onTouchMove);
+          window.removeEventListener("pointerdown", onPointerDown);
+          window.removeEventListener("resize", onResize);
+          triggerResponseRippleRef.current = () => {};
+        };
+      } catch (error) {
+        console.error("WebGPU init failed:", error);
+        return () => {};
+      }
     };
 
-    let cleanup = null;
-
     init().then((fn) => {
-      cleanup = fn;
+      const safeCleanup = fn || (() => {});
+      if (unmounted) {
+        safeCleanup();
+        return;
+      }
+      cleanup = safeCleanup;
     });
 
     return () => {
-      if (cleanup) cleanup();
+      unmounted = true;
+      cleanup();
     };
   }, []);
+
+  useEffect(() => {
+    if (!threeRef.current) return;
+
+    let cleanup = () => {};
+
+    try {
+      cleanup = initEnvelope(threeRef.current, () => {
+        setOpened(true);
+        setTimeout(() => {
+          setShowLetter(true);
+        }, 600);
+      }) || (() => {});
+    } catch (error) {
+      console.error("Three envelope init failed:", error);
+    }
+
+    return () => cleanup();
+  }, []);
+
+  const responseVariants = {
+    hidden: { opacity: 0, y: 24, scale: 0.96 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 110,
+        damping: 20,
+        mass: 0.9,
+        when: "beforeChildren",
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const responseItemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.35, ease: "easeOut" },
+    },
+  };
+
+  const questionVariants = {
+    hidden: { opacity: 0, y: 16, scale: 0.985 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 160,
+        damping: 24,
+        mass: 0.9,
+        when: "beforeChildren",
+        staggerChildren: 0.08,
+      },
+    },
+  };
+
+  const questionItemVariants = {
+    hidden: { opacity: 0, y: 8 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.28, ease: "easeOut" },
+    },
+  };
 
   return (
     <Motion.div
@@ -375,43 +494,68 @@ export default function App() {
           {!opened && <p className="hint">✉️ tap the envelope...</p>}
 
           <Motion.div
-            className="envelope-wrap"
-            onClick={handleOpen}
-            whileHover={{ scale: 1.05 }}
-            animate={{ y: [0, -10, 0] }}
+            className="envelope-wrap envelope-3d-wrap"
+            style={{ transformPerspective: 1200 }}
+            whileHover={{
+              scale: 1.05,
+              rotateX: 4,
+              z: 24,
+              filter: "drop-shadow(0 52px 90px rgba(232, 57, 106, 0.58))",
+            }}
+            animate={{
+              y: [0, -6, 0],
+              z: 0,
+              rotateX: 0,
+              scale: 1,
+              filter: "drop-shadow(0 40px 80px rgba(232, 57, 106, 0.5))",
+            }}
             transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
+              y: {
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              },
+              z: {
+                type: "spring",
+                stiffness: 220,
+                damping: 24,
+              },
+              rotateX: {
+                type: "spring",
+                stiffness: 220,
+                damping: 24,
+              },
+              scale: {
+                type: "spring",
+                stiffness: 220,
+                damping: 24,
+              },
+              filter: {
+                duration: 0.25,
+                ease: "easeOut",
+              },
             }}
           >
-            <div className="env-body"></div>
-            <div className="env-left"></div>
-            <div className="env-right"></div>
-            <div className="env-bottom"></div>
+            <div ref={threeRef} className="three-envelope"></div>
 
             {showLetter && (
               <Motion.div
-                className="letter-wrap slide-up"
-                initial={{ y: 120, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 120,
-                  damping: 10,
-                }}
+                className="letter-wrap"
+                initial="hidden"
+                animate="visible"
+                variants={questionVariants}
               >
                 <div className="letter">
-                  <div className="letter-question">
+                  <Motion.div className="letter-question" variants={questionItemVariants}>
                     Will you go <br /> bowling with me?
-                  </div>
+                  </Motion.div>
 
-                  <div className="btns">
+                  <Motion.div className="btns" variants={questionItemVariants}>
                     <Motion.button
                       className="btn btn-yes"
                       onClick={handleYes}
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.96 }}
+                      whileHover={{ scale: 1.04 }}
                     >
                       Yes! 💕
                     </Motion.button>
@@ -425,29 +569,8 @@ export default function App() {
                     >
                       Maybe not
                     </button>
-                  </div>
+                  </Motion.div>
                 </div>
-              </Motion.div>
-            )}
-
-            <Motion.div
-              className="env-flap"
-              animate={opened ? { rotateX: 180 } : { rotateX: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 80,
-                damping: 12,
-              }}
-            />
-
-            {!opened && (
-              <Motion.div
-                className="seal"
-                initial={{ scale: 1 }}
-                animate={{ scale: opened ? 0 : 1, opacity: opened ? 0 : 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                💌
               </Motion.div>
             )}
           </Motion.div>
@@ -455,30 +578,35 @@ export default function App() {
 
         {showResponse && (
           <Motion.div
+            ref={responseRef}
             className="response show"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+            initial="hidden"
+            animate="visible"
+            variants={responseVariants}
           >
-            <Motion.div
-              className="response-emoji"
-              animate={{ y: [0, -15, 0] }}
-              transition={{
-                repeat: Infinity,
-                duration: 1,
-                ease: "easeInOut",
-              }}
-            >
-              🎳💕🎉
+            <Motion.div variants={responseItemVariants}>
+              <Motion.div
+                className="response-emoji"
+                animate={{ y: [0, -8, 0] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1.6,
+                  ease: "easeInOut",
+                }}
+              >
+                🎳💕🎉
+              </Motion.div>
             </Motion.div>
 
-            <div className="response-text">Yay! It's a date! 🥂</div>
+            <Motion.div className="response-text" variants={responseItemVariants}>
+              Yay! It's a date! 🥂
+            </Motion.div>
 
-            <div className="response-sub">
+            <Motion.div className="response-sub" variants={responseItemVariants}>
               Get ready for the best bowling date ever —
               <br />
               I promise to let you win… maybe. 😏
-            </div>
+            </Motion.div>
           </Motion.div>
         )}
       </div>

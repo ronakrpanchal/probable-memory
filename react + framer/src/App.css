@@ -144,6 +144,8 @@
 .envelope-wrap {
   width: 800px;
   height: 500px;
+  position: relative;
+  z-index: 12;
 
   perspective: 1200px;
 
@@ -151,20 +153,33 @@
   transition: transform 0.3s ease;
 }
 
-.envelope-wrap:hover {
-  transform: scale(1.05);
+.envelope-3d-wrap {
+  cursor: pointer;
+}
+
+.three-envelope {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.three-envelope canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
 
 .env-body,
 .env-left,
 .env-right,
 .env-bottom,
-.env-flap,
+.env-flap {
+  position: absolute;
+  inset: 0;
+}
 
 /* envelope body */
 .env-body {
-  position: absolute;
-  inset: 0;
   border-radius: 6px;
   background: linear-gradient(160deg, #f9e8ef 0%, #f2d0de 100%);
 }
@@ -219,6 +234,7 @@
   box-shadow: 0 4px 14px rgba(232, 57, 106, 0.5);
   animation: glow 2s infinite ease-in-out;
 }
+
 
 @keyframes glow {
   0%, 100% {
@@ -287,7 +303,12 @@
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: linear-gradient(135deg, #1a0a12, #3d0c22);
+  background: linear-gradient(
+    135deg,
+    rgba(26, 10, 18, 0.68),
+    rgba(61, 12, 34, 0.8)
+  );
+  backdrop-filter: blur(2px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -390,4 +411,3 @@
     padding: 0 16px;
   }
 }
-
