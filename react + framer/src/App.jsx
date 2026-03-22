@@ -8,8 +8,11 @@ export default function App() {
   const [showLetter, setShowLetter] = useState(false);
   const [showResponse, setShowResponse] = useState(false);
   const [noBtnPos, setNoBtnPos] = useState({});
+  const [smsStatus, setSmsStatus] = useState("idle");
   const canvasRef = useRef(null);
   const noBtnRef = useRef(null);
+
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
   const handleOpen = () => {
     if (opened) return;
@@ -35,8 +38,32 @@ export default function App() {
     }, 300);
   };
 
-  const handleYes = (e) => {
+  const handleYes = async (e) => {
     e.stopPropagation();
+    if (smsStatus === "sending" || showResponse) return;
+
+    setSmsStatus("sending");
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/send-sms`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error("Failed to send SMS");
+      }
+
+      setSmsStatus("sent");
+    } catch (error) {
+      console.error("SMS send failed:", error);
+      setSmsStatus("failed");
+    }
+
     fireConfetti();
     setTimeout(() => {
       setShowResponse(true);
@@ -412,8 +439,9 @@ export default function App() {
                       onClick={handleYes}
                       whileTap={{ scale: 0.9 }}
                       whileHover={{ scale: 1.1 }}
+                      disabled={smsStatus === "sending"}
                     >
-                      Yes! 💕
+                      {smsStatus === "sending" ? "Sending..." : "Yes! 💕"}
                     </Motion.button>
 
                     <button
@@ -473,6 +501,10 @@ export default function App() {
             </Motion.div>
 
             <div className="response-text">Yay! It's a date! 🥂</div>
+
+            {smsStatus === "failed" && (
+              <div className="response-sub">I couldn't send the SMS notification, but it's still a YES.</div>
+            )}
 
             <div className="response-sub">
               Get ready for the best bowling date ever —
